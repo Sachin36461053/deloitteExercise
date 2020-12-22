@@ -1,0 +1,5 @@
+soap:
+ Wsdl: "/Users/sachinsajan/AnypointStudio/myTrains/sachinsajan/src/main/resources/global-weather.wsdl"
+ Service: "GlobalWeather"
+ Port: "GlobalWeatherSoap"
+ Address: "http://localhost:8080/GlobalWeather"

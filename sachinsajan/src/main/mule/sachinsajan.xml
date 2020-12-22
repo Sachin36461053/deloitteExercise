@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="01399d46-d465-4d5d-b09e-a1c34dbd31d0" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="getWeatherFlow" doc:id="2d69d578-c369-4986-ba03-3af99fa471af" >
+		<ee:transform doc:name="Pass Data" doc:id="fbd78292-9e3f-4f5a-8e33-48c74a1dc090" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.webserviceX.NET
+---
+{
+	ns0#GetWeather: {
+		ns0#CityName: message.attributes.queryParams.City,
+		ns0#CountryName: message.attributes.queryParams.Country
+	}
+} ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="GetWeather" doc:name="Get Weather" doc:id="b9f8fb0d-9354-40ae-af70-726e857da934" config-ref="Web_Service_Consumer_Config1">
+			<error-mapping sourceType="WSC:BAD_REQUEST" targetType="APP:BAD_INPUT" />
+			<error-mapping sourceType="WSC:CONNECTIVITY" targetType="APP:CONNECTIVITY_ISSUE" />
+			<error-mapping sourceType="WSC:TIMEOUT" targetType="APP:TIME_EXCEEDED" />
+		</wsc:consume>
+		<ee:transform doc:name="SOAP to JAVA" doc:id="8725e83f-bddb-4243-946a-96a8d4e80ccc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.body.GetWeatherResponse as String]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="fbb19da7-ee75-4acc-929d-1682a381440f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+read ((payload
+	   replace "&lt;" with ""  
+       replace "&gt;" with ":"
+       replace "/Location:" with ""
+       replace "NewDataSet" with "WeatherDetails"
+       replace "/Time:" with ""
+       replace "/Wind:" with ""
+       replace "/Visibility:" with ""
+       replace "/SkyConditions:" with ""
+       replace "/Temperature:" with ""
+       replace "/DewPoint:" with ""
+       replace "/RelativeHumidity:" with ""
+       replace "/Status:" with ""
+       replace "/WeatherDetails" with ""
+       replace "<![CDATA[" with ""
+       replace "]" with ""
+       replace ":>" with ""), 'application/java')]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getCitiesByCountry" doc:id="a97b7adb-1eb1-487a-935b-121c422b1945" >
+		<ee:transform doc:name="Pass Data" doc:id="87781466-d2e2-4793-a9f0-4ea2c2db6484" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.webserviceX.NET
+---
+{
+	ns0#GetCitiesByCountry: {
+		ns0#CountryName: message.attributes.queryParams.Country
+	}
+} ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="GetCitiesByCountry" doc:name="Get Cities" doc:id="58ceead0-b087-41cc-9f5a-4d4abb98c793" config-ref="Web_Service_Consumer_Config1" >
+			<error-mapping sourceType="WSC:BAD_REQUEST" targetType="APP1:BAD_INPUT" />
+			<error-mapping sourceType="WSC:CONNECTIVITY" targetType="APP1:CONNECTION_ISSUE" />
+		</wsc:consume>
+		<ee:transform doc:name="SOAP to JAVA" doc:id="2a586992-488d-49a8-8b77-5c3b61ede969" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.body.GetCitiesByCountryResponse as String
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="9142fa98-fcc1-42ea-9fa3-bad215780a69" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+read ((payload
+	   replace "&lt;" with ""  
+       replace "&gt;" with ":"
+       replace "/Country:" with ""
+       replace "NewDataSet:" with ""
+       replace "Table:" with ""
+       replace "/City:" with ""
+       replace "/" with ""
+       replace "<![CDATA[" with ""
+       replace "]" with "")
+       replace ":>" with "", 'application/java'
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b5320b3b-ce5a-436c-af7d-be3112a5d831" type="APP1:BAD_INPUT">
+				<ee:transform doc:name="Transform Message" doc:id="7511171e-a9f8-4b2c-842c-b6df1df77a37" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{   
+	message: "Incorrect input for the SOAP request (getCitiesByCountry)",
+	description: error.description,
+	parentErrorType: error.errorType
+	
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e108b673-93c4-4817-887c-b8d4b3259d17" type="APP1:CONNECTION_ISSUE">
+				<ee:transform doc:name="Transform Message" doc:id="c4222e51-5cda-40f2-b593-d117490af5fe" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{   
+	message: "Issue connecting to the Soap Service (getCitiesByCountry)",
+	description: error.description,
+	parentErrorType: error.errorType
+	
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

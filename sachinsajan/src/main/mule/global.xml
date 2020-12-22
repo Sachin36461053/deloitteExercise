@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="1597360d-1a05-4648-acd5-af3bf30cd4b8" file="config.yaml" />
+	<wsc:config name="Web_Service_Consumer_Config1" doc:name="Web Service Consumer Config" doc:id="28a91b93-c626-4d8c-803b-0b6e4f41ac6f" >
+		<wsc:connection wsdlLocation="global-weather.wsdl" service="${soap.Service}" port="${soap.Port}" address="${soap.Address}" />
+	</wsc:config>
+	<configuration doc:name="Configuration" doc:id="885570d6-4c1d-48ec-aca9-e99d960a6fe9" defaultErrorHandler-ref="globalError_Handler" />
+	<error-handler name="globalError_Handler" doc:id="e99bb132-795f-48d7-926f-3ef1fa499168" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f8bb1ffd-d6fa-4609-a1b8-eb7e167cc3d4" type="APP:BAD_INPUT">
+			<ee:transform doc:name="Transform Message" doc:id="650d7af0-b6bc-4f8f-9000-33208df6b8eb" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{   
+	message: "Incorrect input for the SOAP request",
+	description: error.description,
+	parentErrorType: error.errorType
+	
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5a1fc6fa-c179-4ad9-aa00-d25e22857720" type="APP:CONNECTIVITY_ISSUE">
+			<ee:transform doc:name="Transform Message" doc:id="5e6a4bf4-c483-49e6-93a0-1bb46d010af7" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{   
+	message: "Issue connecting to the Soap Service",
+	description: error.description,
+	parentErrorType: error.errorType
+	
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3e9a1e0c-49c9-47d3-9642-ed990f81e485" type="APP:TIME_EXCEEDED">
+			<ee:transform doc:name="Transform Message" doc:id="2321f8cf-6992-4aec-ac4c-adea4f7b2bf3" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{   
+	message: "Time Exceeded for connection",
+	description: error.description,
+	parentErrorType: error.errorType
+	
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>

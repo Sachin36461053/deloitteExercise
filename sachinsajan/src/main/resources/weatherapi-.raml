@@ -1,0 +1,49 @@
+#%RAML 1.0
+title: WeatherAPI 
+
+/GetWeather:
+  get:
+    description: To retrieve weather details
+    queryParameters:
+      City:
+        description: CityName
+        required: false
+        type: string
+      Country:
+        description: CountryName
+        required: false
+        type: string
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              message: Successfully retrieved weather details
+      400:
+        body:
+          application/json:
+            example:
+              message: Error retreiving the weather details
+              
+/GetCities:
+  get:
+    description: To retrieve city details
+    queryParameters:
+      Country:
+        description: CountryName
+        required: false
+        type: string
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              message: Successfully retrieved city details
+      400:
+        body:
+          application/json:
+            example:
+              message: Error retreiving the city details
+
+
+
